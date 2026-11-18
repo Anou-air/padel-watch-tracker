@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="nl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Padel Watch 4 Score Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            background-color: #090d16;
+            color: #ffffff;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+
+        .font-mono-score {
+            font-family: 'JetBrains Mono', monospace;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Realistic Samsung Galaxy Watch 4 Case Styling */
+        .watch-case-outer {
+            position: relative;
+            width: 420px;
+            height: 420px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #374151 0%, #1f2937 45%, #111827 80%, #030712 100%);
+            box-shadow: 
+                0 25px 60px -15px rgba(0, 0, 0, 0.85),
+                inset 0 2px 4px rgba(255, 255, 255, 0.25),
+                inset 0 -3px 6px rgba(0, 0, 0, 0.8),
+                0 0 0 2px #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            flex-shrink: 0;
+        }
+
+        /* Watch Straps */
+        .watch-strap-top, .watch-strap-bottom {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 190px;
+            height: 75px;
+            background: linear-gradient(90deg, #111827 0%, #1f2937 25%, #273449 50%, #1f2937 75%, #111827 100%);
+            z-index: -1;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+        }
+        .watch-strap-top {
+            top: -58px;
+            border-radius: 28px 28px 0 0;
+            border-top: 2px solid #334155;
+        }
+        .watch-strap-bottom {
+            bottom: -58px;
+            border-radius: 0 0 28px 28px;
+            border-bottom: 2px solid #1e293b;
+        }
+
+        /* Galaxy Watch 4 Hardware Side Buttons */
+        .hw-btn-top {
+            position: absolute;
+            right: -11px;
+            top: 112px;
+            width: 14px;
+            height: 54px;
+            background: linear-gradient(180deg, #475569 0%, #1e293b 100%);
+            border: 2px solid #ef4444; /* Classic red/orange home key ring on Galaxy Watch 4 */
+            border-left: none;
+            border-radius: 0 8px 8px 0;
+            transform: rotate(-14deg);
+            cursor: pointer;
+            box-shadow: 3px 3px 8px rgba(0,0,0,0.6);
+            transition: transform 0.1s ease;
+            z-index: 5;
+        }
+        .hw-btn-top:active {
+            transform: rotate(-14deg) translateX(-3px);
+        }
+
+        .hw-btn-bottom {
+            position: absolute;
+            right: -10px;
+            bottom: 112px;
+            width: 12px;
+            height: 48px;
+            background: linear-gradient(180deg, #334155 0%, #0f172a 100%);
+            border: 1px solid #64748b;
+            border-left: none;
+            border-radius: 0 7px 7px 0;
+            transform: rotate(14deg);
+            cursor: pointer;
+            box-shadow: 3px 3px 8px rgba(0,0,0,0.6);
+            transition: transform 0.1s ease;
+            z-index: 5;
+        }
+        .hw-btn-bottom:active {
+            transform: rotate(14deg) translateX(-3px);
+        }
+
+        /* Inner Bezel with subtle minute ticks */
+        .watch-bezel-inner {
+            width: 392px;
+            height: 392px;
+            border-radius: 50%;
+            background: #050505;
+            border: 6px solid #111827;
+            box-shadow: inset 0 0 14px rgba(0,0,0,0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Actual Circular OLED Watch Display (366x366 inside frame, or 100vw/100vh in fullscreen watch mode) */
+        .watch-oled-screen {
+            width: 368px;
+            height: 368px;
+            border-radius: 50%;
+            background-color: #000000;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.06);
+        }
+
+        /* Fullscreen Watch Mode (when opened on actual Galaxy Watch 4 or toggled) */
+        body.watch-fullscreen-mode {
+            background-color: #000000 !important;
+            overflow: hidden !important;
+            height: 100dvh;
+            width: 100vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        body.watch-fullscreen-mode .preview-chrome {
+            display: none !important;
+        }
+
+        body.watch-fullscreen-mode .watch-case-outer {
+            width: 100vw !important;
+            height: 100dvh !important;
+            background: #000000 !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+        }
+
+        body.watch-fullscreen-mode .watch-strap-top,
+        body.watch-fullscreen-mode .watch-strap-bottom,
+        body.watch-fullscreen-mode .hw-btn-top,
+        body.watch-fullscreen-mode .hw-btn-bottom,
+        body.watch-fullscreen-mode .bezel-ticks-svg {
+            display: none !important;
+        }
+
+        body.watch-fullscreen-mode .watch-bezel-inner {
+            width: 100vw !important;
+            height: 100dvh !important;
+            border: none !important;
+            background: #000000 !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+        }
+
+        body.watch-fullscreen-mode .watch-oled-screen {
+            width: min(100vw, 100dvh) !important;
+            height: min(100vw, 100dvh) !important;
+            border-radius: 50% !important;
+            box-shadow: none !important;
+        }
+
+        /* Score Tap Zone Animations */
+        .tap-zone-wij {
+            background: radial-gradient(circle at 50% 20%, rgba(16, 185, 129, 0.22) 0%, rgba(16, 185, 129, 0.05) 60%, rgba(0, 0, 0, 1) 100%);
+            transition: background 0.15s ease, transform 0.08s ease;
+        }
+        .tap-zone-wij:active, .tap-zone-wij.flash-active {
+            background: radial-gradient(circle at 50% 25%, rgba(16, 185, 129, 0.55) 0%, rgba(16, 185, 129, 0.18) 70%, rgba(0, 0, 0, 1) 100%);
+        }
+
+        .tap-zone-zij {
+            background: radial-gradient(circle at 50% 80%, rgba(249, 115, 22, 0.22) 0%, rgba(249, 115, 22, 0.05) 60%, rgba(0, 0, 0, 1) 100%);
+            transition: background 0.15s ease, transform 0.08s ease;
+        }
+        .tap-zone-zij:active, .tap-zone-zij.flash-active {
+            background: radial-gradient(circle at 50% 75%, rgba(249, 115, 22, 0.55) 0%, rgba(249, 115, 22, 0.18) 70%, rgba(0, 0, 0, 1) 100%);
+        }
+
+        @keyframes pulseGold {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.08); opacity: 0.85; }
+        }
+        .golden-pulse {
+            animation: pulseGold 1.4s infinite ease-in-out;
+        }
+
+        @keyframes popScore {
+            0% { transform: scale(0.84); }
+            60% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .score-pop {
+            animation: popScore 0.22s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+
+        /* Custom thin scrollbar for circular settings overlay */
+        .watch-scroll::-webkit-scrollbar {
+            width: 3px;
+        }
+        .watch-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .watch-scroll::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 9999px;
+        }
+
+        /* Responsive scaling for smaller phone screens in preview mode */
+        @media (max-width: 450px) {
+            body:not(.watch-fullscreen-mode) .watch-case-outer {
+                transform: scale(0.84);
+                margin-top: -20px;
+                margin-bottom: -20px;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between py-4 px-3 select-none">
+
+    <!-- TOP BAR: Desktop / Phone Preview Controls (Hidden in Fullscreen Watch Mode) -->
+    <header class="preview-chrome w-full max-w-2xl flex flex-wrap items-center justify-between gap-2 bg-slate-900/90 border border-slate-800 rounded-2xl px-4 py-2.5 backdrop-blur-md shadow-lg z-20">
+        <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-black text-sm">
+                🎾
+            </div>
+            <div>
+                <h1 class="text-sm font-extrabold tracking-tight text-white flex items-center gap-2">
+                    Padel Watch 4 Tracker
+                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Wear OS</span>
+                </h1>
+                <p class="text-[11px] text-slate-400">Tik op <span class="text-emerald-400 font-semibold">WIJ</span> (boven) of <span class="text-orange-400 font-semibold">ZIJ</span> (onder) om direct te scoren</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <button id="btnToggleWatchMode" onclick="toggleWatchMode()" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-950/50 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+                </svg>
+                <span>Volledig Horlogescherm</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Floating Quick-Exit Button when in Fullscreen Mode on Desktop/Mobile -->
+    <button id="btnExitFullscreenFloating" onclick="toggleWatchMode()" title="Toon Horloge Frame" class="hidden fixed top-2 right-2 z-50 bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/80 rounded-full px-2.5 py-1 text-[10px] font-semibold backdrop-blur-md items-center gap-1 opacity-40 hover:opacity-100 transition">
+        <span>⌚ Frame</span>
+    </button>
+
+    <!-- MAIN WATCH CONTAINER -->
+    <main class="flex-1 flex flex-col items-center justify-center my-4 relative">
+        <div class="watch-case-outer" id="watchCase">
+            <!-- Top & Bottom Silicone Watch Straps -->
+            <div class="watch-strap-top"></div>
+            <div class="watch-strap-bottom"></div>
+
+            <!-- Physical Galaxy Watch 4 Right-Side Hardware Buttons -->
+            <button class="hw-btn-top" onclick="openSettingsOverlay()" title="Galaxy Watch Home Knop (Menu / Instellingen)"></button>
+            <button class="hw-btn-bottom" onclick="undoLastPoint()" title="Galaxy Watch Terug Knop (Laatste punt ongedaan maken)"></button>
+
+            <!-- Inner Bezel with Subtle Tick Marks -->
+            <div class="watch-bezel-inner">
+                <!-- Bezel Tick Marks SVG -->
+                <svg class="bezel-ticks-svg absolute inset-0 w-full h-full pointer-events-none opacity-30" viewBox="0 0 392 392">
+                    <circle cx="196" cy="196" r="189" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="2 14.49" />
+                    <circle cx="196" cy="196" r="189" fill="none" stroke="#94a3b8" stroke-width="4" stroke-dasharray="2 96.96" />
+                </svg>
+
+                <!-- ========================================================= -->
+                <!-- ACTUAL CIRCULAR GALAXY WATCH 4 OLED SCREEN (368x368)      -->
+                <!-- ========================================================= -->
+                <div class="watch-oled-screen" id="watchScreen">
+
+                    <!-- TOP CURVED STATUS BAR (Time, Rule Mode & Server Court Side) -->
+                    <div class="absolute top-2.5 left-0 right-0 z-20 flex flex-col items-center pointer-events-none">
+                        <div class="flex items-center gap-1.5 bg-slate-900/90 border border-slate-800/90 px-2.5 py-0.5 rounded-full shadow">
+                            <span id="watchClock" class="text-[10px] font-bold text-slate-400 tracking-wider font-mono-score">14:48</span>
+                            <span class="text-slate-700 text-[9px]">•</span>
+                            <span id="ruleBadgeTop" class="text-[9px] font-extrabold uppercase tracking-wider text-amber-400">★ Gouden Punt</span>
+                        </div>
+                    </div>
+
+                    <!-- ===================================================== -->
+                    <!-- TOP TAP ZONE: "WIJ" (US - EMERALD GREEN)              -->
+                    <!-- ===================================================== -->
+                    <button id="zoneWij" onclick="scorePoint('wij')" aria-label="Punt voor WIJ"
+                        class="tap-zone-wij relative flex-1 w-full flex flex-col items-center justify-end pb-4 pt-8 px-10 focus:outline-none group border-b border-emerald-500/20">
+                        
+                        <!-- Team Row + Service Ball + Service Side Badge -->
+                        <div class="flex items-center justify-center gap-1.5 mb-0.5">
+                            <!-- Service Ball Indicator WIJ -->
+                            <div id="serveIconWij" class="flex items-center gap-1 bg-lime-400/20 border border-lime-400/60 px-1.5 py-0.5 rounded-full">
+                                <span class="w-2 h-2 rounded-full bg-lime-400 shadow-[0_0_8px_#a3e635] inline-block"></span>
+                                <span id="serveSideWij" class="text-[9px] font-black uppercase tracking-wider text-lime-300">RECHTS</span>
+                            </div>
+
+                            <span class="text-xs font-black tracking-widest uppercase text-emerald-400">WIJ</span>
+                        </div>
+
+                        <!-- Giant Score Display WIJ -->
+                        <div class="flex items-baseline justify-center">
+                            <span id="scoreWij" class="font-mono-score text-[62px] leading-none font-extrabold text-white tracking-tighter drop-shadow-[0_2px_12px_rgba(16,185,129,0.35)]">
+                                0
+                            </span>
+                        </div>
+                    </button>
+
+                    <!-- ===================================================== -->
+                    <!-- CENTER HORIZONTAL DIVIDER BAR (UNDO | SETS/GAMES | ⚙️) -->
+                    <!-- ===================================================== -->
+                    <div class="relative z-30 h-14 w-full bg-slate-950/95 border-y border-slate-800/90 px-2.5 flex items-center justify-between gap-1.5 shadow-[0_0_20px_rgba(0,0,0,0.9)]">
+                        
+                        <!-- LEFT EDGE (9 o'clock): LARGE UNDO BUTTON -->
+                        <button id="btnUndo" onclick="undoLastPoint()" disabled
+                            aria-label="Ongedaan maken"
+                            class="w-12 h-11 rounded-2xl bg-slate-900 hover:bg-slate-800 active:scale-90 disabled:opacity-30 disabled:pointer-events-none border border-slate-700/80 flex flex-col items-center justify-center text-slate-200 transition shrink-0">
+                            <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/>
+                            </svg>
+                            <span class="text-[8px] font-extrabold uppercase tracking-tighter text-slate-300 mt-0.5">Herstel</span>
+                        </button>
+
+                        <!-- CENTER SCOREBOARD PILL: SETS & GAMES + PREVIOUS SETS -->
+                        <div onclick="toggleServerManually()" title="Tik om service van team te wisselen"
+                            class="flex-1 h-11 rounded-2xl bg-slate-900/90 border border-slate-800 px-2 flex flex-col items-center justify-center cursor-pointer active:scale-95 transition overflow-hidden">
+                            
+                            <!-- Special Banner (Golden Point / Tie-break / Set Point) -->
+                            <div id="centerAlertBanner" class="hidden text-[9px] font-black uppercase tracking-wider px-2 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 golden-pulse mb-0.5">
+                                ★ GOUDEN PUNT ★
+                            </div>
+
+                            <!-- Current Sets & Current Set Games -->
+                            <div class="flex items-center justify-center gap-2.5 w-full">
+                                <!-- SETS -->
+                                <div class="flex items-center gap-1">
+                                    <span class="text-[9px] font-bold uppercase text-slate-400">SETS</span>
+                                    <div class="font-mono-score text-sm font-extrabold flex items-center gap-0.5 bg-black/60 px-1.5 py-0.5 rounded-md border border-slate-800">
+                                        <span id="setsWij" class="text-emerald-400">0</span>
+                                        <span class="text-slate-600">-</span>
+                                        <span id="setsZij" class="text-orange-400">0</span>
+                                    </div>
+                                </div>
+
+                                <span class="text-slate-700 font-bold">|</span>
+
+                                <!-- GAMES -->
+                                <div class="flex items-center gap-1">
+                                    <span class="text-[9px] font-bold uppercase text-slate-400">GAMES</span>
+                                    <div class="font-mono-score text-sm font-extrabold flex items-center gap-0.5 bg-black/60 px-1.5 py-0.5 rounded-md border border-slate-800">
+                                        <span id="gamesWij" class="text-emerald-400">0</span>
+                                        <span class="text-slate-600">-</span>
+                                        <span id="gamesZij" class="text-orange-400">0</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Set History / Server Court Side Subtitle -->
+                            <div id="setHistoryBar" class="text-[9px] font-semibold text-slate-400 tracking-tight truncate max-w-full mt-0.5">
+                                Set 1 • Tik hier voor servicewissel
+                            </div>
+                        </div>
+
+                        <!-- RIGHT EDGE (3 o'clock): SETTINGS & MENU BUTTON -->
+                        <button id="btnSettings" onclick="openSettingsOverlay()"
+                            aria-label="Instellingen en Nieuw Potje"
+                            class="w-12 h-11 rounded-2xl bg-slate-900 hover:bg-slate-800 active:scale-90 border border-slate-700/80 flex flex-col items-center justify-center text-slate-200 transition shrink-0">
+                            <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            <span class="text-[8px] font-extrabold uppercase tracking-tighter text-slate-300 mt-0.5">Menu</span>
+                        </button>
+                    </div>
+
+                    <!-- ===================================================== -->
+                    <!-- BOTTOM TAP ZONE: "ZIJ" (THEM - CORAL ORANGE)          -->
+                    <!-- ===================================================== -->
+                    <button id="zoneZij" onclick="scorePoint('zij')" aria-label="Punt voor ZIJ"
+                        class="tap-zone-zij relative flex-1 w-full flex flex-col items-center justify-start pt-3 pb-7 px-10 focus:outline-none group border-t border-orange-500/20">
+                        
+                        <!-- Giant Score Display ZIJ -->
+                        <div class="flex items-baseline justify-center">
+                            <span id="scoreZij" class="font-mono-score text-[62px] leading-none font-extrabold text-white tracking-tighter drop-shadow-[0_2px_12px_rgba(249,115,22,0.35)]">
+                                0
+                            </span>
+                        </div>
+
+                        <!-- Team Row + Service Ball + Service Side Badge -->
+                        <div class="flex items-center justify-center gap-1.5 mt-1">
+                            <span class="text-xs font-black tracking-widest uppercase text-orange-400">ZIJ</span>
+
+                            <!-- Service Ball Indicator ZIJ -->
+                            <div id="serveIconZij" class="hidden items-center gap-1 bg-lime-400/20 border border-lime-400/60 px-1.5 py-0.5 rounded-full">
+                                <span class="w-2 h-2 rounded-full bg-lime-400 shadow-[0_0_8px_#a3e635] inline-block"></span>
+                                <span id="serveSideZij" class="text-[9px] font-black uppercase tracking-wider text-lime-300">RECHTS</span>
+                            </div>
+                        </div>
+                    </button>
+
+                    <!-- BOTTOM CURVED HINT / COURT CHANGE TOAST -->
+                    <div id="bottomToast" class="absolute bottom-2 left-0 right-0 z-20 flex justify-center pointer-events-none transition-opacity duration-300">
+                        <span id="bottomToastText" class="text-[9px] font-bold text-slate-500 bg-black/80 px-2.5 py-0.5 rounded-full border border-slate-800/80">
+                            Even: Rechts • Oneven: Links
+                        </span>
+                    </div>
+
+                    <!-- ===================================================== -->
+                    <!-- CIRCULAR OVERLAY 1: SETTINGS & PADEL RULES            -->
+                    <!-- ===================================================== -->
+                    <div id="settingsOverlay" class="hidden absolute inset-0 z-40 bg-black/95 backdrop-blur-md rounded-full flex-col items-center justify-between py-6 px-7 text-center">
+                        <div class="w-full">
+                            <span class="text-[10px] font-black uppercase tracking-widest text-sky-400">Horloge Instellingen</span>
+                            <h2 class="text-sm font-extrabold text-white mt-0.5">Padel Regels &Wedstrijd</h2>
+                        </div>
+
+                        <!-- Scrollable Circular Menu Options -->
+                        <div class="watch-scroll w-full flex-1 overflow-y-auto my-2 space-y-2 px-1 text-left">
+                            
+                            <!-- Deuce Rule Toggle: Golden Point vs Advantage -->
+                            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-2.5">
+                                <div class="text-[10px] font-bold text-slate-400 uppercase mb-1.5">Bij 40-40 (Deuce)</div>
+                                <div class="grid grid-cols-2 gap-1.5">
+                                    <button id="btnRuleGolden" onclick="setDeuceRule('golden')" class="py-1.5 px-2 rounded-xl text-[11px] font-extrabold border transition">
+                                        ★ Gouden Punt
+                                    </button>
+                                    <button id="btnRuleAd" onclick="setDeuceRule('advantage')" class="py-1.5 px-2 rounded-xl text-[11px] font-extrabold border transition">
+                                        AD Voordeel
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 3rd Set Rule Toggle: Full Set vs Super Tie-break (10 pts) -->
+                            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-2.5">
+                                <div class="text-[10px] font-bold text-slate-400 uppercase mb-1.5">3e Set (bij 1-1 in sets)</div>
+                                <div class="grid grid-cols-2 gap-1.5">
+                                    <button id="btnThirdFull" onclick="setThirdSetRule('full')" class="py-1.5 px-2 rounded-xl text-[11px] font-extrabold border transition">
+                                        Volledige Set
+                                    </button>
+                                    <button id="btnThirdSuper" onclick="setThirdSetRule('supertb')" class="py-1.5 px-2 rounded-xl text-[11px] font-extrabold border transition">
+                                        Super TB (10)
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Who Serves Now + Sound Feedback -->
+                            <div class="grid grid-cols-2 gap-1.5">
+                                <button onclick="toggleServerManually()" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-2xl p-2 flex flex-col items-center justify-center text-center active:scale-95 transition">
+                                    <span class="text-[9px] font-bold text-slate-400 uppercase">Service nu</span>
+                                    <span id="settingServerLabel" class="text-xs font-black text-lime-400 mt-0.5">🎾 WIJ</span>
+                                </button>
+
+                                <button onclick="toggleSound()" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-2xl p-2 flex flex-col items-center justify-center text-center active:scale-95 transition">
+                                    <span class="text-[9px] font-bold text-slate-400 uppercase">Geluid & Tril</span>
+                                    <span id="settingSoundLabel" class="text-xs font-black text-emerald-400 mt-0.5">🔊 Aan</span>
+                                </button>
+                            </div>
+
+                            <!-- Match Stats Summary inside Settings -->
+                            <div class="bg-slate-900/70 border border-slate-800/80 rounded-2xl p-2.5 text-center">
+                                <div class="text-[9px] font-bold text-slate-400 uppercase mb-1">Wedstrijd Statistieken</div>
+                                <div class="flex justify-around text-xs font-bold">
+                                    <div>
+                                        <span class="text-emerald-400">WIJ:</span> <span id="statTotalWij" class="font-mono-score text-white">0</span> pt
+                                    </div>
+                                    <div>
+                                        <span class="text-orange-400">ZIJ:</span> <span id="statTotalZij" class="font-mono-score text-white">0</span> pt
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Reset / New Match Action (with inline confirmation) -->
+                            <div class="pt-1 pb-2">
+                                <button id="btnResetMatch" onclick="handleResetClick()" class="w-full py-2.5 px-3 rounded-2xl bg-rose-950/80 hover:bg-rose-900 border border-rose-500/40 text-rose-200 font-extrabold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition">
+                                    <span>🔄 Nieuw Potje Starten</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Close Settings Button (Bottom Center of Circle) -->
+                        <button onclick="closeSettingsOverlay()" class="px-6 py-2 rounded-full bg-sky-500 hover:bg-sky-400 active:scale-95 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-sky-500/20 transition">
+                            Klaar & Verder
+                        </button>
+                    </div>
+
+                    <!-- ===================================================== -->
+                    <!-- CIRCULAR OVERLAY 2: MATCH WON / CELEBRATION           -->
+                    <!-- ===================================================== -->
+                    <div id="matchWinOverlay" class="hidden absolute inset-0 z-50 bg-black/95 backdrop-blur-md rounded-full flex-col items-center justify-between py-7 px-7 text-center">
+                        <div class="mt-1">
+                            <span class="text-2xl">🏆</span>
+                            <div class="text-[10px] font-black uppercase tracking-widest text-amber-400 mt-0.5">Wedstrijd Afgelopen</div>
+                            <h2 id="winTitle" class="text-lg font-black text-emerald-400 mt-0.5">WIJ WINNEN!</h2>
+                        </div>
+
+                        <!-- Final Set Scores Pill -->
+                        <div class="w-full bg-slate-900/90 border border-slate-800 rounded-2xl p-3 my-1">
+                            <div class="text-[9px] font-bold uppercase text-slate-400 mb-1">Eindstand Sets</div>
+                            <div id="winSetScores" class="font-mono-score text-base font-extrabold text-white tracking-wider">
+                                6-4  •  6-3
+                            </div>
+                            <div id="winPointsSummary" class="text-[10px] font-semibold text-slate-400 mt-1.5">
+                                Totaal punten: WIJ 58 - 44 ZIJ
+                            </div>
+                        </div>
+
+                        <!-- Actions: Continue Free Play (baan nog gehuurd) or New Match -->
+                        <div class="w-full flex flex-col gap-1.5 px-3">
+                            <button onclick="continueEndlessPlay()" class="w-full py-2 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-[11px] active:scale-95 transition">
+                                ⏱️ Baantijd over? Speel extra set
+                            </button>
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="undoFromWinScreen()" class="px-3.5 py-2 rounded-full bg-slate-900 border border-slate-700 text-amber-300 font-bold text-[11px] active:scale-95 transition">
+                                    ↩ Herstel
+                                </button>
+                                <button onclick="confirmResetMatch()" class="flex-1 py-2 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase active:scale-95 transition">
+                                    Nieuw Potje
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- END WATCH OLED SCREEN -->
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER GUIDE: How to use on Samsung Galaxy Watch 4 & Court Ergonomics -->
+    <footer class="preview-chrome w-full max-w-2xl bg-slate-900/70 border border-slate-800/80 rounded-2xl p-3.5 text-xs text-slate-300 shadow-lg">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="flex items-start gap-2.5">
+                <span class="text-base">👆</span>
+                <div>
+                    <div class="font-bold text-white">Zweetbestendige Knoppen</div>
+                    <p class="text-[11px] text-slate-400 leading-snug mt-0.5">Het hele bovenste halfrond telt voor <strong class="text-emerald-400">WIJ</strong>, het onderste halfrond voor <strong class="text-orange-400">ZIJ</strong>. Zonder kijken te bedienen.</p>
+                </div>
+            </div>
+            <div class="flex items-start gap-2.5">
+                <span class="text-base">🎾</span>
+                <div>
+                    <div class="font-bold text-white">Service & Rechts/Links Hulp</div>
+                    <p class="text-[11px] text-slate-400 leading-snug mt-0.5">Toont automatisch wie serveert én vanaf welke kant (<strong class="text-lime-300">RECHTS</strong> bij even stand, <strong class="text-lime-300">LINKS</strong> bij oneven stand).</p>
+                </div>
+            </div>
+            <div class="flex items-start gap-2.5">
+                <span class="text-base">⌚</span>
+                <div>
+                    <div class="font-bold text-white">Op je Galaxy Watch 4</div>
+                    <p class="text-[11px] text-slate-400 leading-snug mt-0.5">Open in <em>Samsung Internet</em> op je horloge of klik rechtsboven op <strong>Volledig Horlogescherm</strong> voor rand-tot-rand OLED weergave.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        /* =====================================================================
+           PADEL SCORE TRACKER - COMPLETE STATE & PADEL RULES ENGINE
+           ===================================================================== */
+
+        const STORAGE_KEY = 'padel_watch4_match_state_v1';
+
+        // Standard Padel point display labels
+        const POINT_LABELS = ['0', '15', '30', '40'];
+
+        // Default Match State
+        function createInitialState(configOverrides = {}) {
+            return {
+                // Config options
+                deuceRule: configOverrides.deuceRule || 'golden',     // 'golden' (Punto de Oro) or 'advantage' (Voordeel)
+                thirdSetRule: configOverrides.thirdSetRule || 'full', // 'full' or 'supertb' (Super Tie-break to 10)
+                soundEnabled: configOverrides.soundEnabled !== undefined ? configOverrides.soundEnabled : true,
+                endlessSets: false, // Allows continuing past 2 won sets if court rental time remains
+
+                // Current Score
+                pointsWij: 0,
+                pointsZij: 0,
+                gamesWij: 0,
+                gamesZij: 0,
+                setsWij: 0,
+                setsZij: 0,
+
+                // Set History: array of objects [{ wij: 6, zij: 4, tb: null }, ...]
+                completedSets: [],
+
+                // Mode flags
+                isTieBreak: false,
+                isSuperTieBreak: false,
+                matchWinner: null, // 'wij' | 'zij' | null
+
+                // Service Tracking
+                currentServer: 'wij',        // 'wij' | 'zij'
+                tieBreakInitialServer: null, // Remembers who started the tie-break so next set alternates properly
+
+                // Match Statistics
+                totalPointsWij: 0,
+                totalPointsZij: 0,
+                goldenPointsPlayed: 0
+            };
+        }
+
+        let state = createInitialState();
+        let historyStack = []; // Stores deep snapshots of previous states for multi-level Undo
+        let resetConfirmTimeout = null;
+        let waitingForResetConfirm = false;
+        let audioCtx = null;
+
+        /* =====================================================================
+           AUDIO & HAPTIC FEEDBACK (Wear OS Vibration + Optional Beep)
+           ===================================================================== */
+
+        function triggerHaptic(pattern) {
+            try {
+                if (navigator.vibrate) {
+                    navigator.vibrate(pattern);
+                }
+            } catch (e) {
+                // Ignore if unsupported on desktop
+            }
+        }
+
+        function playTone(type) {
+            if (!state.soundEnabled) return;
+            try {
+                if (!audioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (!AudioContext) return;
+                    audioCtx = new AudioContext();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'wij') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(660, now);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+                    osc.start(now);
+                    osc.stop(now + 0.09);
+                } else if (type === 'zij') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(480, now);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+                    osc.start(now);
+                    osc.stop(now + 0.09);
+                } else if (type === 'game') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(587.33, now); // D5
+                    osc.frequency.setValueAtTime(880, now + 0.09); // A5
+                    gain.gain.setValueAtTime(0.11, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+                    osc.start(now);
+                    osc.stop(now + 0.24);
+                } else if (type === 'undo') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(340, now);
+                    gain.gain.setValueAtTime(0.06, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                }
+            } catch (e) {
+                // Ignore audio errors
+            }
+        }
+
+        /* =====================================================================
+           PERSISTENCE (LOCALSTORAGE)
+           ===================================================================== */
+
+        function saveStateToStorage() {
+            try {
+                const payload = {
+                    state: state,
+                    historyStack: historyStack.slice(-40) // Keep last 40 points in history
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+            } catch (e) {
+                // Ignore storage quota errors
+            }
+        }
+
+        function loadStateFromStorage() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return;
+                const parsed = JSON.parse(raw);
+                if (parsed && parsed.state) {
+                    state = Object.assign(createInitialState(), parsed.state);
+                    historyStack = Array.isArray(parsed.historyStack) ? parsed.historyStack : [];
+                }
+            } catch (e) {
+                state = createInitialState();
+                historyStack = [];
+            }
+        }
+
+        function pushHistorySnapshot() {
+            historyStack.push(JSON.parse(JSON.stringify(state)));
+            if (historyStack.length > 50) {
+                historyStack.shift();
+            }
+        }
+
+        /* =====================================================================
+           CORE PADEL SCORING LOGIC
+           ===================================================================== */
+
+        function otherTeam(team) {
+            return team === 'wij' ? 'zij' : 'wij';
+        }
+
+        function scorePoint(team) {
+            if (state.matchWinner) return;
+
+            // Save snapshot for Undo
+            pushHistorySnapshot();
+
+            // Visual flash & pop animation
+            triggerZoneFlash(team);
+
+            // Increment total match point counter
+            if (team === 'wij') {
+                state.totalPointsWij++;
+            } else {
+                state.totalPointsZij++;
+            }
+
+            let gameOrSetJustWon = false;
+
+            // 1. Check if we are in a Tie-Break (6-6) or Super Tie-Break (1-1 sets)
+            if (state.isTieBreak || state.isSuperTieBreak) {
+                const targetPoints = state.isSuperTieBreak ? 10 : 7;
+
+                if (team === 'wij') state.pointsWij++;
+                else state.pointsZij++;
+
+                const pW = state.pointsWij;
+                const pZ = state.pointsZij;
+                const totalTBPoints = pW + pZ;
+
+                // Official Padel Tie-Break Server Rotation:
+                // First point (totalTBPoints === 1 completed) -> server switches.
+                // Thereafter, server switches after every 2 points (at 1, 3, 5, 7, 9...).
+                if (totalTBPoints % 2 === 1) {
+                    state.currentServer = otherTeam(state.currentServer);
+                }
+
+                // Check if a team reached targetPoints (7 or 10) with >= 2 points difference
+                if ((pW >= targetPoints || pZ >= targetPoints) && Math.abs(pW - pZ) >= 2) {
+                    winTieBreakSet(team);
+                    gameOrSetJustWon = true;
+                } else if (totalTBPoints > 0 && totalTBPoints % 6 === 0) {
+                    showToast('🔄 Tie-break: Wissel van speelhelft! (elke 6 pt)');
+                }
+            } else {
+                // 2. Standard Game Scoring (0, 15, 30, 40, Deuce / Golden Point / Advantage)
+                const pTeam = team === 'wij' ? state.pointsWij : state.pointsZij;
+                const pOther = team === 'wij' ? state.pointsZij : state.pointsWij;
+
+                // Check 40-40 (3-3 in internal point index)
+                if (pTeam === 3 && pOther === 3) {
+                    if (state.deuceRule === 'golden') {
+                        // GOLDEN POINT (Punto de Oro): Next point at 40-40 immediately wins the game!
+                        state.goldenPointsPlayed++;
+                        winGame(team);
+                        gameOrSetJustWon = true;
+                    } else {
+                        // ADVANTAGE: Player moves to Advantage (4)
+                        if (team === 'wij') state.pointsWij = 4;
+                        else state.pointsZij = 4;
+                    }
+                } else if (pTeam === 4 && pOther === 3) {
+                    // Had Advantage and scored again -> Wins Game
+                    winGame(team);
+                    gameOrSetJustWon = true;
+                } else if (pTeam === 3 && pOther === 4) {
+                    // Opponent had Advantage -> Back to Deuce (40-40 / 3-3)
+                    state.pointsWij = 3;
+                    state.pointsZij = 3;
+                    showToast('Terug naar Gelijkspel (40-40)');
+                } else if (pTeam === 3 && pOther < 3) {
+                    // Was at 40 and opponent had 0, 15, or 30 -> Wins Game
+                    winGame(team);
+                    gameOrSetJustWon = true;
+                } else {
+                    // Normal progression: 0 -> 15 -> 30 -> 40
+                    if (team === 'wij') state.pointsWij++;
+                    else state.pointsZij++;
+                }
+            }
+
+            // Haptic & Audio feedback
+            if (gameOrSetJustWon) {
+                triggerHaptic([60, 45, 110]);
+                playTone('game');
+            } else {
+                triggerHaptic(35);
+                playTone(team);
+            }
+
+            saveStateToStorage();
+            renderUI();
+        }
+
+        function winGame(team) {
+            state.pointsWij = 0;
+            state.pointsZij = 0;
+
+            if (team === 'wij') state.gamesWij++;
+            else state.gamesZij++;
+
+            // Alternate server for next game
+            state.currentServer = otherTeam(state.currentServer);
+
+            const gW = state.gamesWij;
+            const gZ = state.gamesZij;
+            const totalGames = gW + gZ;
+
+            // Check if Set is won (6 games with >=2 lead, or 7-5)
+            if ((gW >= 6 || gZ >= 6) && Math.abs(gW - gZ) >= 2) {
+                winSet(team);
+                return;
+            }
+
+            // Check if 6-6 Tie-Break is reached
+            if (gW === 6 && gZ === 6) {
+                state.isTieBreak = true;
+                state.tieBreakInitialServer = state.currentServer;
+                showToast('⚡ 6-6: Tie-break tot 7 punten!');
+                return;
+            }
+
+            // Official Padel rule: Change court ends after odd total games in a set (1, 3, 5, 7, 9, 11)
+            if (totalGames % 2 === 1) {
+                showToast(`🔄 Oneven games (${gW}-${gZ}): Wissel van kant!`);
+            } else {
+                showToast(`Game voor ${team.toUpperCase()}! (${gW}-${gZ})`);
+            }
+        }
+
+        function winTieBreakSet(team) {
+            const tbScoreForHistory = `${state.pointsWij}-${state.pointsZij}`;
+
+            if (state.isSuperTieBreak) {
+                // Super Tie-Break represents the whole 3rd set
+                state.completedSets.push({
+                    wij: state.pointsWij,
+                    zij: state.pointsZij,
+                    isSuperTB: true
+                });
+            } else {
+                if (team === 'wij') state.gamesWij = 7;
+                else state.gamesZij = 7;
+
+                state.completedSets.push({
+                    wij: state.gamesWij,
+                    zij: state.gamesZij,
+                    tb: tbScoreForHistory
+                });
+            }
+
+            if (team === 'wij') state.setsWij++;
+            else state.setsZij++;
+
+            // Reset points & games for next set
+            state.pointsWij = 0;
+            state.pointsZij = 0;
+            state.gamesWij = 0;
+            state.gamesZij = 0;
+
+            // Who serves next set? The team that did NOT start serving the tie-break
+            if (state.tieBreakInitialServer) {
+                state.currentServer = otherTeam(state.tieBreakInitialServer);
+            } else {
+                state.currentServer = otherTeam(state.currentServer);
+            }
+
+            state.isTieBreak = false;
+            state.isSuperTieBreak = false;
+            state.tieBreakInitialServer = null;
+
+            checkMatchOrNextSet(team);
+        }
+
+        function winSet(team) {
+            state.completedSets.push({
+                wij: state.gamesWij,
+                zij: state.gamesZij,
+                tb: null
+            });
+
+            if (team === 'wij') state.setsWij++;
+            else state.setsZij++;
+
+            state.pointsWij = 0;
+            state.pointsZij = 0;
+            state.gamesWij = 0;
+            state.gamesZij = 0;
+
+            checkMatchOrNextSet(team);
+        }
+
+        function checkMatchOrNextSet(teamJustWonSet) {
+            // Standard Best of 3 sets (first to 2 sets), unless user clicked "Continue endless play"
+            if (!state.endlessSets && (state.setsWij >= 2 || state.setsZij >= 2)) {
+                state.matchWinner = state.setsWij > state.setsZij ? 'wij' : 'zij';
+                return;
+            }
+
+            // Check if we just reached 1-1 in sets and 3rd set rule is Super Tie-Break (to 10)
+            if (state.setsWij === 1 && state.setsZij === 1 && state.thirdSetRule === 'supertb') {
+                state.isSuperTieBreak = true;
+                state.tieBreakInitialServer = state.currentServer;
+                showToast('🔥 1-1 in Sets: Super Tie-break tot 10 pt!');
+            } else {
+                showToast(`🎉 Set voor ${teamJustWonSet.toUpperCase()}! Start nieuwe set.`);
+            }
+        }
+
+        function undoLastPoint() {
+            if (historyStack.length === 0) return;
+            state = historyStack.pop();
+            triggerHaptic(25);
+            playTone('undo');
+            saveStateToStorage();
+            renderUI();
+            showToast('↩ Laatste punt hersteld');
+        }
+
+        function toggleServerManually() {
+            pushHistorySnapshot();
+            state.currentServer = otherTeam(state.currentServer);
+            triggerHaptic(25);
+            saveStateToStorage();
+            renderUI();
+            showToast(`🎾 Service gewisseld naar ${state.currentServer.toUpperCase()}`);
+        }
+
+        /* =====================================================================
+           SERVICE COURT SIDE CALCULATION ("RECHTS" vs "LINKS")
+           ===================================================================== */
+
+        function getCurrentServiceSide() {
+            // In Padel, the first point of every game or tie-break starts from the Right (Forehand / Even) court.
+            // If total points played in the current game is Even (0, 2, 4, 6...) -> RECHTS.
+            // If total points played in the current game is Odd (1, 3, 5, 7...) -> LINKS.
+            // Special case: At Golden Point (40-40 in Golden Point mode), the RECEIVING team chooses the side!
+            if (!state.isTieBreak && !state.isSuperTieBreak && state.pointsWij === 3 && state.pointsZij === 3 && state.deuceRule === 'golden') {
+                return 'KEUZE';
+            }
+
+            const totalPointsInGame = state.pointsWij + state.pointsZij;
+            return (totalPointsInGame % 2 === 0) ? 'RECHTS' : 'LINKS';
+        }
+
+        /* =====================================================================
+           UI RENDERING & VISUAL FEEDBACK
+           ===================================================================== */
+
+        function getFormattedGameScore(team) {
+            const pW = state.pointsWij;
+            const pZ = state.pointsZij;
+
+            if (state.isTieBreak || state.isSuperTieBreak) {
+                return team === 'wij' ? String(pW) : String(pZ);
+            }
+
+            // Standard Game (0, 15, 30, 40, AD / ★)
+            if (pW === 3 && pZ === 3) {
+                if (state.deuceRule === 'golden') {
+                    return '40★';
+                }
+                return '40';
+            }
+
+            if (pW === 4 && pZ === 3) {
+                return team === 'wij' ? 'AD' : '40';
+            }
+            if (pZ === 4 && pW === 3) {
+                return team === 'zij' ? 'AD' : '40';
+            }
+
+            const idx = team === 'wij' ? pW : pZ;
+            return POINT_LABELS[idx] || '0';
+        }
+
+        function triggerZoneFlash(team) {
+            const zoneEl = document.getElementById(team === 'wij' ? 'zoneWij' : 'zoneZij');
+            const scoreEl = document.getElementById(team === 'wij' ? 'scoreWij' : 'scoreZij');
+
+            zoneEl.classList.add('flash-active');
+            scoreEl.classList.remove('score-pop');
+            void scoreEl.offsetWidth; // Force reflow
+            scoreEl.classList.add('score-pop');
+
+            setTimeout(() => {
+                zoneEl.classList.remove('flash-active');
+            }, 160);
+        }
+
+        let toastTimer = null;
+        function showToast(msg) {
+            const toastText = document.getElementById('bottomToastText');
+            toastText.textContent = msg;
+            toastText.className = 'text-[9px] font-extrabold text-amber-300 bg-slate-900/95 px-2.5 py-0.5 rounded-full border border-amber-500/40 shadow';
+
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                updateDefaultBottomHint();
+            }, 3500);
+        }
+
+        function updateDefaultBottomHint() {
+            const toastText = document.getElementById('bottomToastText');
+            const side = getCurrentServiceSide();
+            const srv = state.currentServer.toUpperCase();
+            if (side === 'KEUZE') {
+                toastText.textContent = `★ Gouden Punt: Ontvanger kiest kant`;
+                toastText.className = 'text-[9px] font-extrabold text-amber-300 bg-amber-950/80 px-2.5 py-0.5 rounded-full border border-amber-500/40';
+            } else {
+                toastText.textContent = `Service ${srv}: ${side} (${side === 'RECHTS' ? 'Even' : 'Oneven'})`;
+                toastText.className = 'text-[9px] font-bold text-slate-400 bg-black/80 px-2.5 py-0.5 rounded-full border border-slate-800/80';
+            }
+        }
+
+        function renderUI() {
+            // 1. Update Top Rule Badge
+            const ruleBadgeTop = document.getElementById('ruleBadgeTop');
+            if (state.isSuperTieBreak) {
+                ruleBadgeTop.textContent = '🔥 SUPER TB (10)';
+                ruleBadgeTop.className = 'text-[9px] font-extrabold uppercase tracking-wider text-rose-400';
+            } else if (state.isTieBreak) {
+                ruleBadgeTop.textContent = '⚡ TIE-BREAK (7)';
+                ruleBadgeTop.className = 'text-[9px] font-extrabold uppercase tracking-wider text-sky-400';
+            } else if (state.deuceRule === 'golden') {
+                ruleBadgeTop.textContent = '★ Gouden Punt';
+                ruleBadgeTop.className = 'text-[9px] font-extrabold uppercase tracking-wider text-amber-400';
+            } else {
+                ruleBadgeTop.textContent = 'AD Voordeel';
+                ruleBadgeTop.className = 'text-[9px] font-extrabold uppercase tracking-wider text-sky-400';
+            }
+
+            // 2. Render Giant Game Scores
+            const scoreWijEl = document.getElementById('scoreWij');
+            const scoreZijEl = document.getElementById('scoreZij');
+            const strWij = getFormattedGameScore('wij');
+            const strZij = getFormattedGameScore('zij');
+
+            scoreWijEl.textContent = strWij;
+            scoreZijEl.textContent = strZij;
+
+            // Slightly adjust font size if score is 3 chars like '40★'
+            scoreWijEl.style.fontSize = strWij.length >= 3 ? '48px' : '62px';
+            scoreZijEl.style.fontSize = strZij.length >= 3 ? '48px' : '62px';
+
+            // 3. Render Service Indicator & Service Court Side (RECHTS / LINKS)
+            const serveIconWij = document.getElementById('serveIconWij');
+            const serveIconZij = document.getElementById('serveIconZij');
+            const serveSideWij = document.getElementById('serveSideWij');
+            const serveSideZij = document.getElementById('serveSideZij');
+            const currentSide = getCurrentServiceSide();
+
+            if (state.currentServer === 'wij') {
+                serveIconWij.classList.remove('hidden');
+                serveIconWij.classList.add('flex');
+                serveIconZij.classList.add('hidden');
+                serveIconZij.classList.remove('flex');
+                serveSideWij.textContent = currentSide;
+            } else {
+                serveIconZij.classList.remove('hidden');
+                serveIconZij.classList.add('flex');
+                serveIconWij.classList.add('hidden');
+                serveIconWij.classList.remove('flex');
+                serveSideZij.textContent = currentSide;
+            }
+
+            // 4. Center Bar: Sets & Games
+            document.getElementById('setsWij').textContent = state.setsWij;
+            document.getElementById('setsZij').textContent = state.setsZij;
+            document.getElementById('gamesWij').textContent = state.gamesWij;
+            document.getElementById('gamesZij').textContent = state.gamesZij;
+
+            // 5. Center Special Alert Banner (Golden Point / Tie-Break / Advantage)
+            const alertBanner = document.getElementById('centerAlertBanner');
+            const isGoldenDeuce = !state.isTieBreak && !state.isSuperTieBreak && state.pointsWij === 3 && state.pointsZij === 3 && state.deuceRule === 'golden';
+            if (isGoldenDeuce) {
+                alertBanner.textContent = '★ GOUDEN PUNT ★';
+                alertBanner.className = 'block text-[8px] font-black uppercase tracking-wider px-2 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/50 golden-pulse';
+            } else if (state.isSuperTieBreak) {
+                alertBanner.textContent = 'SUPER TIE-BREAK TOT 10';
+                alertBanner.className = 'block text-[8px] font-black uppercase tracking-wider px-2 py-0.2 rounded-full bg-rose-500/20 text-rose-300 border border-rose-400/50';
+            } else if (state.isTieBreak) {
+                alertBanner.textContent = 'TIE-BREAK TOT 7';
+                alertBanner.className = 'block text-[8px] font-black uppercase tracking-wider px-2 py-0.2 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/50';
+            } else {
+                alertBanner.className = 'hidden';
+            }
+
+            // 6. Set History Line in Center Bar
+            const historyBar = document.getElementById('setHistoryBar');
+            if (state.completedSets.length > 0) {
+                const formattedSets = state.completedSets.map((s, idx) => {
+                    if (s.isSuperTB) return `[${s.wij}-${s.zij}]`;
+                    return `${s.wij}-${s.zij}`;
+                }).join(' • ');
+                historyBar.textContent = `Sets: ${formattedSets}`;
+            } else {
+                const currentSetNum = state.setsWij + state.setsZij + 1;
+                historyBar.textContent = `Set ${currentSetNum} • Tik voor servicewissel`;
+            }
+
+            // 7. Undo Button State
+            document.getElementById('btnUndo').disabled = historyStack.length === 0;
+
+            // 8. Default Bottom Hint (unless a temporary toast is active)
+            if (!toastTimer) {
+                updateDefaultBottomHint();
+            }
+
+            // 9. Update Settings Modal State
+            updateSettingsUI();
+
+            // 10. Check Match Win Overlay
+            const winOverlay = document.getElementById('matchWinOverlay');
+            if (state.matchWinner) {
+                winOverlay.classList.remove('hidden');
+                winOverlay.classList.add('flex');
+
+                const winTitle = document.getElementById('winTitle');
+                if (state.matchWinner === 'wij') {
+                    winTitle.textContent = 'WIJ WINNEN! 🎉';
+                    winTitle.className = 'text-lg font-black text-emerald-400 mt-0.5';
+                } else {
+                    winTitle.textContent = 'ZIJ WINNEN!';
+                    winTitle.className = 'text-lg font-black text-orange-400 mt-0.5';
+                }
+
+                const formattedAllSets = state.completedSets.map(s => s.isSuperTB ? `[${s.wij}-${s.zij}]` : `${s.wij}-${s.zij}`).join('  •  ');
+                document.getElementById('winSetScores').textContent = formattedAllSets || `${state.setsWij} - ${state.setsZij}`;
+                document.getElementById('winPointsSummary').textContent = `Totaal punten: WIJ ${state.totalPointsWij} - ${state.totalPointsZij} ZIJ`;
+            } else {
+                winOverlay.classList.add('hidden');
+                winOverlay.classList.remove('flex');
+            }
+        }
+
+        /* =====================================================================
+           SETTINGS & OVERLAY CONTROLS
+           ===================================================================== */
+
+        function openSettingsOverlay() {
+            waitingForResetConfirm = false;
+            updateResetButtonAppearance();
+            updateSettingsUI();
+            const el = document.getElementById('settingsOverlay');
+            el.classList.remove('hidden');
+            el.classList.add('flex');
+            triggerHaptic(20);
+        }
+
+        function closeSettingsOverlay() {
+            const el = document.getElementById('settingsOverlay');
+            el.classList.add('hidden');
+            el.classList.remove('flex');
+            triggerHaptic(20);
+        }
+
+        function setDeuceRule(rule) {
+            state.deuceRule = rule;
+            // If currently at AD and user switches to Golden Point, normalize back to 40-40
+            if (rule === 'golden' && !state.isTieBreak && !state.isSuperTieBreak) {
+                if (state.pointsWij === 4 || state.pointsZij === 4) {
+                    state.pointsWij = 3;
+                    state.pointsZij = 3;
+                }
+            }
+            triggerHaptic(20);
+            saveStateToStorage();
+            renderUI();
+        }
+
+        function setThirdSetRule(rule) {
+            state.thirdSetRule = rule;
+            triggerHaptic(20);
+            saveStateToStorage();
+            renderUI();
+        }
+
+        function toggleSound() {
+            state.soundEnabled = !state.soundEnabled;
+            triggerHaptic(20);
+            if (state.soundEnabled) playTone('wij');
+            saveStateToStorage();
+            updateSettingsUI();
+        }
+
+        function updateSettingsUI() {
+            const btnGolden = document.getElementById('btnRuleGolden');
+            const btnAd = document.getElementById('btnRuleAd');
+
+            if (state.deuceRule === 'golden') {
+                btnGolden.className = 'py-1.5 px-2 rounded-xl text-[11px] font-extrabold border bg-amber-500/20 border-amber-400 text-amber-300';
+                btnAd.className = 'py-1.5 px-2 rounded-xl text-[11px] font-bold border bg-slate-950 border-slate-800 text-slate-400';
+            } else {
+                btnAd.className = 'py-1.5 px-2 rounded-xl text-[11px] font-extrabold border bg-sky-500/20 border-sky-400 text-sky-300';
+                btnGolden.className = 'py-1.5 px-2 rounded-xl text-[11px] font-bold border bg-slate-950 border-slate-800 text-slate-400';
+            }
+
+            const btnThirdFull = document.getElementById('btnThirdFull');
+            const btnThirdSuper = document.getElementById('btnThirdSuper');
+
+            if (state.thirdSetRule === 'full') {
+                btnThirdFull.className = 'py-1.5 px-2 rounded-xl text-[11px] font-extrabold border bg-emerald-500/20 border-emerald-400 text-emerald-300';
+                btnThirdSuper.className = 'py-1.5 px-2 rounded-xl text-[11px] font-bold border bg-slate-950 border-slate-800 text-slate-400';
+            } else {
+                btnThirdSuper.className = 'py-1.5 px-2 rounded-xl text-[11px] font-extrabold border bg-rose-500/20 border-rose-400 text-rose-300';
+                btnThirdFull.className = 'py-1.5 px-2 rounded-xl text-[11px] font-bold border bg-slate-950 border-slate-800 text-slate-400';
+            }
+
+            const srvLabel = document.getElementById('settingServerLabel');
+            srvLabel.textContent = state.currentServer === 'wij' ? '🎾 WIJ' : '🎾 ZIJ';
+            srvLabel.className = state.currentServer === 'wij'
+                ? 'text-xs font-black text-emerald-400 mt-0.5'
+                : 'text-xs font-black text-orange-400 mt-0.5';
+
+            const sndLabel = document.getElementById('settingSoundLabel');
+            sndLabel.textContent = state.soundEnabled ? '🔊 Aan' : '🔇 Uit';
+            sndLabel.className = state.soundEnabled
+                ? 'text-xs font-black text-emerald-400 mt-0.5'
+                : 'text-xs font-black text-slate-500 mt-0.5';
+
+            document.getElementById('statTotalWij').textContent = state.totalPointsWij;
+            document.getElementById('statTotalZij').textContent = state.totalPointsZij;
+        }
+
+        function handleResetClick() {
+            if (!waitingForResetConfirm) {
+                waitingForResetConfirm = true;
+                triggerHaptic(35);
+                updateResetButtonAppearance();
+                if (resetConfirmTimeout) clearTimeout(resetConfirmTimeout);
+                resetConfirmTimeout = setTimeout(() => {
+                    waitingForResetConfirm = false;
+                    updateResetButtonAppearance();
+                }, 3500);
+            } else {
+                confirmResetMatch();
+            }
+        }
+
+        function updateResetButtonAppearance() {
+            const btn = document.getElementById('btnResetMatch');
+            if (!btn) return;
+            if (waitingForResetConfirm) {
+                btn.innerHTML = '<span>⚠️ Tik nogmaals om te wissen!</span>';
+                btn.className = 'w-full py-2.5 px-3 rounded-2xl bg-rose-600 text-white font-black text-xs flex items-center justify-center gap-1.5 animate-pulse';
+            } else {
+                btn.innerHTML = '<span>🔄 Nieuw Potje Starten</span>';
+                btn.className = 'w-full py-2.5 px-3 rounded-2xl bg-rose-950/80 hover:bg-rose-900 border border-rose-500/40 text-rose-200 font-extrabold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition';
+            }
+        }
+
+        function confirmResetMatch() {
+            waitingForResetConfirm = false;
+            const keepConfig = {
+                deuceRule: state.deuceRule,
+                thirdSetRule: state.thirdSetRule,
+                soundEnabled: state.soundEnabled
+            };
+            state = createInitialState(keepConfig);
+            historyStack = [];
+            triggerHaptic([50, 40, 50]);
+            saveStateToStorage();
+            closeSettingsOverlay();
+            renderUI();
+            showToast('🎾 Nieuw potje gestart! Veel succes!');
+        }
+
+        function continueEndlessPlay() {
+            state.endlessSets = true;
+            state.matchWinner = null;
+            triggerHaptic(35);
+            saveStateToStorage();
+            renderUI();
+            showToast('⏱️ Extra set gestart!');
+        }
+
+        function undoFromWinScreen() {
+            undoLastPoint();
+        }
+
+        /* =====================================================================
+           WATCH FRAME MODE vs FULLSCREEN WATCH BROWSER MODE + WAKE LOCK
+           ===================================================================== */
+
+        let isFullscreenWatchMode = false;
+        let wakeLockSentinel = null;
+
+        async function requestScreenWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLockSentinel = await navigator.wakeLock.request('screen');
+                }
+            } catch (e) {
+                // Ignore if wakeLock is denied by browser policy
+            }
+        }
+
+        function toggleWatchMode(forceState) {
+            isFullscreenWatchMode = forceState !== undefined ? forceState : !isFullscreenWatchMode;
+            const floatingBtn = document.getElementById('btnExitFullscreenFloating');
+
+            if (isFullscreenWatchMode) {
+                document.body.classList.add('watch-fullscreen-mode');
+                floatingBtn.classList.remove('hidden');
+                floatingBtn.classList.add('flex');
+                requestScreenWakeLock();
+            } else {
+                document.body.classList.remove('watch-fullscreen-mode');
+                floatingBtn.classList.add('hidden');
+                floatingBtn.classList.remove('flex');
+            }
+        }
+
+        /* =====================================================================
+           CLOCK & KEYBOARD / ROTARY BEZEL SHORTCUTS
+           ===================================================================== */
+
+        function updateWatchClock() {
+            const now = new Date();
+            const hh = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            const clockEl = document.getElementById('watchClock');
+            if (clockEl) clockEl.textContent = `${hh}:${mm}`;
+        }
+
+        // Support keyboard & Galaxy Watch hardware events
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+                e.preventDefault();
+                scorePoint('wij');
+            } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+                e.preventDefault();
+                scorePoint('zij');
+            } else if (e.key === 'Backspace' || e.key === 'z' || e.key === 'Z') {
+                e.preventDefault();
+                undoLastPoint();
+            }
+        });
+
+        /* =====================================================================
+           INITIALIZATION ON LOAD
+           ===================================================================== */
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadStateFromStorage();
+            updateWatchClock();
+            setInterval(updateWatchClock, 15000);
+
+            // Auto-enable Fullscreen Watch Mode if opened directly on a small circular watch viewport (<= 460px width & height)
+            if (window.innerWidth <= 460 && window.innerHeight <= 460) {
+                toggleWatchMode(true);
+            }
+
+            renderUI();
+            requestScreenWakeLock();
+        });
+    </script>
+</body>
+</html>
